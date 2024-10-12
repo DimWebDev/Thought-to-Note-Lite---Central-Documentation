@@ -20,7 +20,9 @@ This guide will walk you through the system architecture, configuration, and det
    - [Frontend Testing](#frontend-testing)
 5. [Key Design Choices](#key-design-choices)
 6. [API Summary](#api-summary)
-7. [Troubleshooting & Common Issues](#troubleshooting--common-issues)
+7. [Github CI/CD Workflows](#continuous-integration-ci-pipeline-integration)
+8. [Branching Strategies](#branching-strategy)
+9. [Troubleshooting & Common Issues](#troubleshooting--common-issues)
 
 ## System Architecture
 
@@ -167,6 +169,89 @@ Testing is a crucial aspect of ensuring that the Thought-to-Note Lite applicatio
 The **backend API** is well-documented using Swagger, which can be accessed when the backend is running by navigating to `http://localhost:8080/swagger-ui.html`. Swagger provides an interactive interface that helps developers explore and test the API endpoints, view example responses, and understand the request parameters.
 
 To facilitate manual testing or integration with other tools, a **Postman Collection** (`postman_collection.json`) is included in the backend repository under the `api/` directory. This collection contains pre-configured API requests that make it easy to interact with the backend endpoints.
+
+## Continuous Integration (CI) Pipeline Integration
+
+In addition to the core architecture and functionality of **Thought-to-Note Lite**, we have implemented **Continuous Integration (CI) pipelines** for both the backend and frontend repositories. These pipelines are designed to automate the build, testing, and deployment processes, ensuring that the system remains robust and reliable as new code is introduced. This section explains how the CI pipelines work, their role in maintaining the codebase's integrity, and the specific GitHub Actions used for automating the development workflow.
+
+## GitHub CI Pipeline Overview
+
+GitHub Actions has been employed to manage the CI pipeline for both the backend and frontend repositories. These pipelines are triggered automatically on certain events, such as code pushes, pull requests, or manual dispatch, ensuring that code changes are tested and validated before being merged or deployed. By doing so, we maintain a high level of code quality and prevent bugs or regressions from reaching production.
+
+### Backend CI Pipeline
+
+The backend repository's CI pipeline is defined in the `.github/workflows/ci.yml` file and is designed to automate the build and testing of the backend's Java-based Spring Boot application. Key features of the backend pipeline include:
+
+- **Java 21 Environment**: The pipeline uses GitHub Actions to set up a Java 21 environment with the Temurin distribution. This ensures compatibility and consistency across all build processes.
+  
+- **Maven Caching**: To speed up the build process, Maven dependencies are cached. This reduces the time required for each build by preventing repeated downloading of the same dependencies.
+
+- **Automated Builds and Tests**: The pipeline installs necessary dependencies using Maven and runs unit tests. This is crucial for ensuring that new code does not introduce any failures in the existing system. JUnit and Mockito are used to perform unit testing for service classes and API controllers.
+
+- **Test Results**: Although optional, the pipeline includes steps to upload test reports, which provide detailed feedback on the status of the tests. These reports can be useful for reviewing test results after a pipeline run.
+
+### Frontend CI Pipeline
+
+The frontend repository also has a dedicated CI pipeline, defined in the `.github/workflows/ci.yml` file. This pipeline ensures that the React-based frontend is properly tested and built with every new code change. Important features include:
+
+- **Node.js 20 Environment**: The pipeline uses GitHub Actions to set up a Node.js 20 environment, ensuring that the latest stable version of Node.js is used during builds.
+
+- **NPM Caching**: Similar to the backend pipeline, the frontend pipeline caches node modules. This speeds up dependency installation by reusing previously installed packages where possible.
+
+- **Automated Testing**: The frontend CI pipeline runs tests using Jest and React Testing Library. These tests validate the functionality of the React components and hooks, ensuring that the UI behaves as expected. Mocked API calls are also tested to simulate interactions with the backend.
+
+- **Test Coverage Reporting**: The pipeline collects test coverage reports, which provide insights into the extent of code covered by tests. These reports are uploaded as artifacts and can be reviewed to ensure comprehensive testing.
+
+- **Build Process**: After the tests pass successfully, the application is built for production using the `npm run build` command. The build artifacts are then uploaded, ensuring they are readily available for deployment.
+
+### Pipeline Triggers
+
+Both pipelines are configured to trigger on a variety of events:
+
+- **Push Events**: The pipelines are triggered automatically when code is pushed to certain branches (`main`, `develop`, and feature branches such as `feature/**`, `bugfix/**`, and `hotfix/**`). This ensures that all code changes are validated before they are merged into the main branch.
+  
+- **Pull Requests**: Pull requests targeting the same branches also trigger the CI pipeline. This allows developers to ensure that their changes are tested before the pull request is merged, preventing potential issues from being introduced into the codebase.
+
+- **Manual Trigger**: The pipelines can also be triggered manually using the `workflow_dispatch` event. This provides flexibility to run the pipeline on-demand, for example, if a developer wants to re-run tests after making changes or after an external dependency has been updated.
+
+### Benefits of CI Pipelines
+
+The integration of CI pipelines into both repositories brings several key benefits:
+
+- **Automated Testing**: Every time code is pushed or a pull request is made, the system automatically runs the tests, ensuring that the code remains functional and any new changes are properly validated.
+  
+- **Faster Development Cycle**: The caching of dependencies in both the backend and frontend pipelines helps to speed up build times. This ensures that developers receive feedback quickly, which is essential for maintaining a fast and efficient development cycle.
+
+- **Early Bug Detection**: By running tests on every commit, we are able to catch bugs early in the development process. This reduces the likelihood of bugs making it into the production environment, saving time and effort in the long run.
+
+The addition of GitHub CI pipelines in both the **backend** and **frontend** repositories of Thought-to-Note Lite represents a significant improvement in terms of development efficiency and code quality. These pipelines automate the crucial tasks of building, testing, and validating code, ensuring that new features or bug fixes do not introduce regressions or errors into the system. By employing best practices such as dependency caching, automated testing, and environment consistency, the pipelines contribute to the scalability and maintainability of the system, aligning with the broader goals of the application’s architecture.
+
+## Branching Strategy
+
+To ensure organized development and collaboration, **Thought-to-Note Lite** uses a branching strategy based on **Git Flow**. This approach allows smooth integration of new features, bug fixes, and urgent updates while maintaining code stability. Here's a concise breakdown of the strategy:
+
+### Key Branches
+
+1. **Main Branch (`main`)**:  
+   Holds the production-ready code. Only stable, tested versions of the application are merged here. Direct development on `main` is avoided.
+
+2. **Development Branch (`develop`)**:  
+   The `develop` branch contains the latest working code with new features and fixes. It serves as the integration branch for ongoing development, representing the most up-to-date version of the project before it’s ready for release.
+
+3. **Feature/Bugfix/Hotfix Branches**:  
+   - **Feature Branches** (`feature/feature-name`): For developing new features. Merged into `develop` after testing.
+   - **Bugfix Branches** (`bugfix/issue-description`): For fixing bugs in `develop`.
+   - **Hotfix Branches** (`hotfix/issue-description`): For urgent production fixes. Merged into both `main` and `develop`.
+
+### Workflow
+
+- **feature/bugfix branches are created  from `develop`.**
+- **After development and testing, pull requests are opened to merge changes into `develop`.**
+- **Once `develop` is stable and tested, it is merged into `main` for production.**
+- **Hotfix branches address critical production issues and are merged back into both `main` and `develop` to keep everything aligned.**
+
+
+This branching strategy ensures an organized workflow, with the `develop` branch containing the most current working version of the code. The `main` branch is reserved for stable, production-ready releases, aligning with industry best practices for version control and team collaboration.
 
 ## Troubleshooting & Common Issues
 
